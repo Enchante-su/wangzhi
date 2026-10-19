@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>实验数据管理后台</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+        background: #f4f5f9;
+        color: #2c2c34;
+        font-size: 14px;
+        padding: 20px;
+    }
+    .wrap { max-width: 1400px; margin: 0 auto; }
+
+    h1 { font-size: 20px; margin-bottom: 4px; }
+    .sub { color: #8a8a99; font-size: 12px; margin-bottom: 18px; }
+
+    .card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 18px 20px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, .06);
+        margin-bottom: 16px;
+    }
+
+    /* ---- 登录 ---- */
+    #gate { max-width: 360px; margin: 80px auto; text-align: center; }
+    #gate input {
+        width: 100%; padding: 11px 14px; margin: 14px 0;
+        border: 1px solid #d8d8e0; border-radius: 8px; font-size: 14px;
+    }
+    #gate .err { color: #e5484d; font-size: 12px; height: 16px; }
+
+    /* ---- 工具栏 ---- */
+    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .toolbar .spacer { flex: 1; }
+
+    button {
+        padding: 8px 16px; border-radius: 8px; border: 1px solid #d8d8e0;
+        background: #fff; color: #2c2c34; cursor: pointer; font-size: 13px;
+        transition: .15s;
+    }
+    button:hover { background: #f0f0f6; }
+    button.primary { background: #5b6ef5; border-color: #5b6ef5; color: #fff; }
+    button.primary:hover { background: #4a5de0; }
+    button.danger { color: #e5484d; border-color: #f5c2c4; }
+    button.danger:hover { background: #fdecee; }
+
+    select, input[type=text] {
+        padding: 8px 12px; border-radius: 8px; border: 1px solid #d8d8e0;
+        font-size: 13px; background: #fff;
+    }
+    input[type=text] { min-width: 200px; }
+    label.check { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #5a5a68; cursor: pointer; }
+
+    /* ---- 统计 ---- */
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+    .stat {
+        background: #fff; border-radius: 10px; padding: 14px 16px;
+        border: 1px solid #ececf2;
+    }
+    .stat .label { font-size: 12px; color: #8a8a99; margin-bottom: 6px; }
+    .stat .value { font-size: 22px; font-weight: 700; color: #2c2c34; }
+    .stat .value small { font-size: 12px; font-weight: 400; color: #8a8a99; }
+
+    /* ---- 表格 ---- */
+    .table-box { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #f0f0f5; vertical-align: top; }
+    th { background: #fafafd; color: #6a6a78; font-weight: 600; white-space: nowrap; position: sticky; top: 0; }
+    tr:hover td { background: #fbfbfe; }
+    td.num { text-align: center; white-space: nowrap; }
+    .tag {
+        display: inline-block; padding: 2px 9px; border-radius: 20px;
+        font-size: 12px; white-space: nowrap;
+    }
+    .tag.robot { background: #eef2ff; color: #4a5de0; }
+    .tag.virtual { background: #fdeef8; color: #c0419a; }
+    .tag.scene { background: #eefaf1; color: #2a8f4f; }
+    .tag.text { background: #e0f2fe; color: #0369a1; }
+
+    details summary { cursor: pointer; color: #5b6ef5; font-size: 12px; }
+    details .qa { margin-top: 8px; font-size: 12px; line-height: 1.7; color: #5a5a68; }
+    details .qa b { color: #2c2c34; }
+    details .qa .ans { color: #7a7a88; }
+
+    .empty { text-align: center; color: #a0a0ad; padding: 40px 0; font-size: 13px; }
+    .muted { color: #a0a0ad; }
+</style>
+</head>
+<body>
+
+<!-- ============ 登录 ============ -->
+<div id="gate" class="card">
+    <h1>实验数据管理后台</h1>
+    <p class="sub">请输入管理密码</p>
+    <input type="password" id="pwd" placeholder="管理密码" autocomplete="current-password">
+    <div class="err" id="gateErr"></div>
+    <button class="primary" style="width:100%" onclick="login()">进入后台</button>
+</div>
+
+<!-- ============ 主界面 ============ -->
+<div id="main" class="wrap" style="display:none">
+    <h1>实验数据管理后台</h1>
+    <p class="sub" id="updatedAt">—</p>
+
+    <!-- 统计 -->
+    <div class="card">
+        <div class="stat-grid" id="stats"></div>
+    </div>
+
+    <!-- 工具栏 -->
+    <div class="card toolbar">
+        <select id="fScene">
+            <option value="">全部场景</option>
+            <option value="computer">电脑</option>
+            <option value="pet">宠物定位器</option>
+            <option value="perfume">香水</option>
+        </select>
+        <select id="fAi">
+            <option value="">全部助手类型</option>
+            <option value="机器人">AI机器人助手</option>
+            <option value="虚拟人">AI虚拟人助手</option>
+            <option value="文字">AI购物文字助手</option>
+        </select>
+        <input type="text" id="fSearch" placeholder="搜索会话编号 / 产品 / 提问内容">
+        <label class="check"><input type="checkbox" id="autoRefresh"> 自动刷新(10s)</label>
+        <div class="spacer"></div>
+        <button onclick="load(true)">刷新</button>
+        <button class="primary" onclick="exportCsv()">导出 CSV</button>
+        <button class="danger" onclick="clearAll()">清空全部</button>
+        <button onclick="logout()">退出</button>
+    </div>
+
+    <!-- 表格 -->
+    <div class="card">
+        <div class="table-box">
+            <table>
+                <thead>
+                    <tr>
+                        <th>记录时间</th>
+                        <th>会话编号</th>
+                        <th>分配场景</th>
+                        <th>AI助手类型</th>
+                        <th>消费偏好选择</th>
+                        <th>AI强烈推荐产品</th>
+                        <th>细致提问数量</th>
+                        <th>AI助手评分</th>
+                        <th>用时</th>
+                        <th>提问记录</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="tbody"></tbody>
+            </table>
+        </div>
+        <div class="empty" id="emptyHint" style="display:none">暂无数据</div>
+    </div>
+</div>
+
+<script>
+let PASSWORD = "";
+let ALL = [];
+let timer = null;
+
+function api(path, options) {
+    options = options || {};
+    options.headers = Object.assign({ "X-Admin-Password": PASSWORD }, options.headers || {});
+    return fetch(path, options);
+}
+
+function login() {
+    PASSWORD = document.getElementById("pwd").value.trim();
+    if (!PASSWORD) return;
+    load(false).then(ok => {
+        if (ok) {
+            sessionStorage.setItem("adminPwd", PASSWORD);
+            document.getElementById("gate").style.display = "none";
+            document.getElementById("main").style.display = "block";
+        }
+    });
+}
+
+function logout() {
+    sessionStorage.removeItem("adminPwd");
+    location.reload();
+}
+
+async function load(manual) {
+    try {
+        const res = await api("/api/records");
+        if (res.status === 401) {
+            document.getElementById("gateErr").textContent = "密码错误，请重新输入";
+            if (!manual) sessionStorage.removeItem("adminPwd");
+            return false;
+        }
+        const json = await res.json();
+        ALL = json.records || [];
+        render();
+        document.getElementById("updatedAt").textContent =
+            "共 " + ALL.length + " 条记录 · 最后更新 " + new Date().toLocaleTimeString("zh-CN");
+        return true;
+    } catch (e) {
+        document.getElementById("updatedAt").textContent = "加载失败，请确认后端服务正在运行";
+        return false;
+    }
+}
+
+function fmtTime(iso) {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    const p = n => String(n).padStart(2, "0");
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + " "
+        + p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
+}
+
+function fmtDur(sec) {
+    if (sec == null) return "—";
+    return Math.floor(sec / 60) + "分" + (sec % 60) + "秒";
+}
+
+function filtered() {
+    const scene = document.getElementById("fScene").value;
+    const ai = document.getElementById("fAi").value;
+    const kw = document.getElementById("fSearch").value.trim().toLowerCase();
+    return ALL.filter(r => {
+        if (scene && (r.condition_id || "").indexOf(scene) < 0) return false;
+        if (ai && r.ai_type !== ai) return false;
+        if (kw) {
+            const hay = [r.session_id, r.recommended_product, r.preference_text]
+                .concat((r.questions || []).map(q => q.question))
+                .join(" ").toLowerCase();
+            if (hay.indexOf(kw) < 0) return false;
+        }
+        return true;
+    });
+}
+
+function escapeHtml(s) {
+    return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+}
+
+function render() {
+    const rows = filtered();
+
+    // ---- 统计 ----
+    const total = ALL.length;
+    const avgDur = total ? Math.round(ALL.reduce((s, r) => s + (r.duration_seconds || 0), 0) / total) : 0;
+    const avgQ = total ? (ALL.reduce((s, r) => s + (r.detail_question_count || 0), 0) / total).toFixed(1) : "0";
+    const ratedRecords = ALL.filter(r => r.rating != null);
+    const avgRating = ratedRecords.length
+        ? (ratedRecords.reduce((s, r) => s + (r.rating || 0), 0) / ratedRecords.length).toFixed(2) + " / 5"
+        : "—";
+    const ratingDist = {};
+    ALL.forEach(r => { if (r.rating != null) ratingDist[r.rating] = (ratingDist[r.rating] || 0) + 1; });
+    const byCond = {};
+    ALL.forEach(r => { byCond[r.condition_id] = (byCond[r.condition_id] || 0) + 1; });
+
+    let statsHtml = `
+        <div class="stat"><div class="label">实验总人次</div><div class="value">${total}</div></div>
+        <div class="stat"><div class="label">平均用时</div><div class="value">${avgDur}<small> 秒</small></div></div>
+        <div class="stat"><div class="label">平均细致提问数</div><div class="value">${avgQ}<small> 条</small></div></div>
+        <div class="stat"><div class="label">平均AI助手评分</div><div class="value" style="color:#e5484d">${avgRating}</div><div class="muted" style="font-size:11px">${ratedRecords.length ? ratedRecords.length + " 人已评" : "暂无评分"}</div></div>`;
+    const condNames = {
+        "robot-computer": "机器人·电脑", "robot-pet": "机器人·宠物", "robot-perfume": "机器人·香水",
+        "virtual-computer": "虚拟人·电脑", "virtual-pet": "虚拟人·宠物", "virtual-perfume": "虚拟人·香水",
+        "text-computer": "文字助手·电脑", "text-pet": "文字助手·宠物", "text-perfume": "文字助手·香水"
+    };
+    Object.keys(condNames).forEach(k => {
+        statsHtml += `<div class="stat"><div class="label">${condNames[k]}</div>
+            <div class="value">${byCond[k] || 0}<small> 人次</small></div></div>`;
+    });
+    document.getElementById("stats").innerHTML = statsHtml;
+
+    // ---- 表格 ----
+    const tbody = document.getElementById("tbody");
+    document.getElementById("emptyHint").style.display = rows.length ? "none" : "block";
+    tbody.innerHTML = rows.map(r => {
+        const aiCls = r.ai_type === "AI机器人助手" ? "robot"
+            : r.ai_type === "AI虚拟人助手" ? "virtual"
+            : r.ai_type === "AI购物文字助手" ? "text" : "";
+        const qs = r.questions || [];
+        const qDetail = qs.length
+            ? `<details><summary>${qs.length} 条</summary><div class="qa">` +
+              qs.map((q, i) => `<b>Q${i + 1}：${escapeHtml(q.question)}</b><br>
+                  <span class="ans">A：${escapeHtml(q.answer)}</span>`).join("<br><br>") +
+              `</div></details>`
+            : '<span class="muted">无</span>';
+        return `<tr>
+            <td class="num">${fmtTime(r.created_at)}</td>
+            <td>${escapeHtml(r.session_id) || "—"}</td>
+            <td><span class="tag scene">${escapeHtml(r.scenario_name) || "—"}</span></td>
+            <td><span class="tag ${aiCls}">${escapeHtml(r.ai_type) || "—"}</span></td>
+            <td>${escapeHtml(r.preference_text) || '<span class="muted">未选择</span>'}</td>
+            <td>${escapeHtml(r.recommended_product) || '<span class="muted">未到达推荐</span>'}</td>
+            <td class="num">${r.detail_question_count || 0} / ${r.detail_question_total || 0}</td>
+            <td class="num">${r.rating != null ? '<span style="font-weight:700;color:#e5484d;font-size:15px">★ ' + r.rating + '</span>' : '<span class="muted">—</span>'}</td>
+            <td class="num">${fmtDur(r.duration_seconds)}</td>
+            <td>${qDetail}</td>
+            <td><button class="danger" onclick="delRecord('${r.id}')">删除</button></td>
+        </tr>`;
+    }).join("");
+}
+
+async function delRecord(id) {
+    if (!confirm("确定删除这条记录吗？")) return;
+    await api("/api/records/" + id, { method: "DELETE" });
+    load(true);
+}
+
+async function clearAll() {
+    if (!confirm("确定清空全部实验数据吗？此操作不可恢复！")) return;
+    if (!confirm("再次确认：所有被试记录都会被删除。")) return;
+    await api("/api/records", { method: "DELETE" });
+    load(true);
+}
+
+function exportCsv() {
+    const rows = filtered();
+    if (!rows.length) { alert("没有可导出的数据"); return; }
+    const head = ["记录时间", "会话编号", "分配场景", "AI助手类型", "消费偏好选择",
+        "AI强烈推荐产品", "细致提问数量", "提问总数", "AI助手评分", "用时(秒)", "用时", "提问记录"];
+    const lines = [head.join(",")];
+    rows.forEach(r => {
+        const qText = (r.questions || []).map((q, i) =>
+            `Q${i + 1}: ${q.question} → A: ${q.answer}`).join(" || ");
+        const cells = [
+            fmtTime(r.created_at), r.session_id || "", r.scenario_name || "", r.ai_type || "",
+            r.preference_text || "", r.recommended_product || "",
+            r.detail_question_count || 0, r.detail_question_total || 0,
+            r.rating != null ? r.rating : "",
+            r.duration_seconds || 0, fmtDur(r.duration_seconds), qText
+        ];
+        lines.push(cells.map(c => '"' + String(c).replace(/"/g, '""').replace(/\r?\n/g, " ") + '"').join(","));
+    });
+    // 加 BOM，保证 Excel 正确识别中文
+    const blob = new Blob(["\ufeff" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "实验数据_" + new Date().toISOString().slice(0, 10) + ".csv";
+    a.click();
+}
+
+// ---- 事件绑定 ----
+["fScene", "fAi", "fSearch"].forEach(id => {
+    document.getElementById(id).addEventListener("input", render);
+});
+document.getElementById("autoRefresh").addEventListener("change", e => {
+    if (timer) { clearInterval(timer); timer = null; }
+    if (e.target.checked) timer = setInterval(() => load(true), 10000);
+});
+document.getElementById("pwd").addEventListener("keydown", e => {
+    if (e.key === "Enter") login();
+});
+
+// 会话内记住密码，免重复输入
+(function autoLogin() {
+    const saved = sessionStorage.getItem("adminPwd");
+    if (saved) {
+        PASSWORD = saved;
+        load(false).then(ok => {
+            if (ok) {
+                document.getElementById("gate").style.display = "none";
+                document.getElementById("main").style.display = "block";
+            }
+        });
+    }
+})();
+</script>
+</body>
+</html>

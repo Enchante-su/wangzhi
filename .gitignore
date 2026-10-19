@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+
+# 数据库（线上走持久化磁盘，本地测试数据不入仓库）
+data/
+
+# 系统
+.DS_Store
+Thumbs.db
+
+# 编辑器
+.vscode/
+.idea/
+
+# 日志
+*.log
+
+# 临时脚本
+_temp*.py
+
+# 视频素材（实验页面不使用，且单文件超过 GitHub 100MB 限制）
+*.mp4
+*.mov
+*.avi
+机器人/
+虚拟人/

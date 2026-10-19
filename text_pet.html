@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>网购情景模拟实验</title>
+    <link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<!-- ===== 首页 ===== -->
+<div id="landingPage" class="page active">
+    <h1 class="landing-title">🛒 网购情景模拟实验</h1>
+    <p class="landing-subtitle">欢迎参与本次网购情景模拟研究</p>
+
+    <div class="instruction-box">
+        <h3>📋 实验说明</h3>
+        <ul>
+            <li>您将被随机分配到一个网购场景</li>
+            <li>AI购物助手将为您推荐产品，并通过对话为您讲解</li>
+            <li>请先选择您的消费偏好，AI助手会据此为您推荐产品</li>
+            <li>您可以针对推荐的产品，从预设问题中选择进行细致提问</li>
+            <li>整个过程大约需要5-10分钟</li>
+        </ul>
+    </div>
+
+    <button class="start-btn" onclick="startExperiment()">开始实验</button>
+</div>
+
+<!-- ===== 聊天交互页 ===== -->
+<div id="chatPage" class="page">
+    <div class="chat-header">
+        <span class="shop-name"><span class="online-dot"></span><span id="shopName">官方旗舰店 — AI客服</span></span>
+    </div>
+
+    <div class="chat-main">
+        <div class="chat-body" id="chatBody">
+            <!-- 聊天消息由JS动态生成 -->
+        </div>
+    </div>
+
+    <div class="chat-footer">
+        <div class="footer-tip" id="footerTip">为了给您精准推荐，请先选择您的消费偏好：</div>
+        <div class="question-chips" id="questionChips">
+            <!-- 选项由JS动态生成 -->
+        </div>
+    </div>
+</div>
+
+<!-- ===== 结束页 ===== -->
+<div id="endPage" class="page">
+    <h1 class="end-title">✅ 实验完成</h1>
+    <p class="end-message">感谢您的参与！</p>
+    <div class="session-info" id="sessionInfo">
+        <!-- 实验信息由JS填充 -->
+    </div>
+    <div class="reminder-note">请记住AI助手类型，并返回问卷进行填写</div>
+</div>
+
+<script>window.FORCED_CONDITION = "text-pet";</script>
+<script src="app.js"></script>
+
+</body>
+</html>
